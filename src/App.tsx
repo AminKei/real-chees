@@ -39,13 +39,14 @@ const App = () => {
           justifyContent: "space-around",
           padding: isMobile ? "10px" : "0px",
           alignItems: "center",
+          backgroundColor:"#853b07"
         }}
       >
         <Title level={isMobile ? 4 : 2} style={{color:"white", marginTop:"10px"}}>CHEES</Title>
         <Typography style={{ fontSize: isMobile ? "12px" : "16px" , color:"white"}}>
           Current Turn: {currentPlayer === "white" ? "White" : "Black"}
         </Typography>
-        <Button type="primary" onClick={resetGame}>
+        <Button type="dashed" onClick={resetGame} >
           New Game
         </Button>
       </Header>
@@ -64,7 +65,7 @@ const App = () => {
           style={{
             width: isMobile ? "100%" : "150px",
             background: "#fff",
-            padding: "10px",
+            padding: "8px",
             height: "100%",
             borderRadius: "8px",
           }}
