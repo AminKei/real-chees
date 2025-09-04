@@ -1,10 +1,9 @@
 import { Button, Layout, Typography, Modal } from "antd";
 import { pieceImages } from "./PieceImages";
-import useChess from "./Models/Hook/useChees";
+import { useChess } from "./Models/Hook/useChees";
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
-
 const App = () => {
   const {
     board,
@@ -35,18 +34,20 @@ const App = () => {
           borderRadius: "8px",
           marginBottom: "20px",
           display: "flex",
-          color:"white",
+          color: "white",
           justifyContent: "space-around",
           padding: isMobile ? "10px" : "0px",
           alignItems: "center",
-          backgroundColor:"#853b07"
+          backgroundColor: "#853b07",
         }}
       >
-        <Title level={isMobile ? 4 : 2} style={{color:"white", marginTop:"10px"}}>CHEES</Title>
-        <Typography style={{ fontSize: isMobile ? "12px" : "16px" , color:"white"}}>
-          Current Turn: {currentPlayer === "white" ? "White" : "Black"}
+        <Title level={isMobile ? 4 : 2} style={{ color: "white", marginTop: "10px" }}>
+          CHESS
+        </Title>
+        <Typography style={{ fontSize: isMobile ? "12px" : "16px", color: "white" }}>
+          Current Turn: {currentPlayer === "white" ? "Player (White)" : "Computer (Black)"}
         </Typography>
-        <Button type="dashed" onClick={resetGame} >
+        <Button type="dashed" onClick={resetGame}>
           New Game
         </Button>
       </Header>
@@ -70,8 +71,8 @@ const App = () => {
             borderRadius: "8px",
           }}
         >
-          <div className="white-captured" >
-            White Captured:{" "}
+          <div className="white-captured">
+            Player Captured:{" "}
             {capturedPieces.white.map((piece, index) => (
               <img
                 key={index}
@@ -126,14 +127,14 @@ const App = () => {
                     <img
                       src={pieceImages[piece as keyof typeof pieceImages]}
                       alt={piece}
-                      draggable
+                      draggable={piece === piece.toUpperCase()} // Only white pieces are draggable
                       onDragStart={(e) =>
                         handleDragStart(e, rowIndex, colIndex)
                       }
                       style={{
                         width: `${pieceSize}px`,
                         height: `${pieceSize}px`,
-                        cursor: "grab",
+                        cursor: piece === piece.toUpperCase() ? "grab" : "default",
                       }}
                     />
                   )}
@@ -152,7 +153,7 @@ const App = () => {
           }}
         >
           <div className="black-captured">
-            Black Captured:{" "}
+            Computer Captured:{" "}
             {capturedPieces.black.map((piece, index) => (
               <img
                 key={index}
@@ -173,7 +174,7 @@ const App = () => {
         onOk={resetGame}
         onCancel={() => setGameOver(false)}
       >
-        <p>{winner.charAt(0).toUpperCase() + winner.slice(1)} wins!</p>
+        <p>{winner === "white" ? "Player (White)" : "Computer (Black)"} wins!</p>
       </Modal>
     </Layout>
   );

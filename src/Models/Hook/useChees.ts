@@ -1,6 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Button, Layout, Typography, Modal } from "antd";
+// import { pieceImages } from "./PieceImages";
 import { Position } from "../PositionModel";
 
+const { Header, Content } = Layout;
+const { Title } = Typography;
+
+// Chess Hook
 const isValidMove = (
   piece: string,
   start: Position,
@@ -103,7 +109,7 @@ const isKingInCheck = (board: string[][], isWhiteKing: boolean) => {
   return false;
 };
 
-const useChess = () => {
+export const useChess = () => {
   const initialBoard = [
     ["r", "n", "b", "q", "k", "b", "n", "r"],
     ["p", "p", "p", "p", "p", "p", "p", "p"],
@@ -116,9 +122,7 @@ const useChess = () => {
   ];
 
   const [board, setBoard] = useState<string[][]>(initialBoard);
-  const [currentPlayer, setCurrentPlayer] = useState<"white" | "black">(
-    "white"
-  );
+  const [currentPlayer, setCurrentPlayer] = useState<"white" | "black">("white");
   const [gameOver, setGameOver] = useState<boolean>(false);
   const [winner, setWinner] = useState<string>("");
   const [draggedPiece, setDraggedPiece] = useState<Position | null>(null);
@@ -130,15 +134,89 @@ const useChess = () => {
     black: [],
   });
 
+  const getLegalMoves = (row: number, col: number, piece: string) => {
+    const moves: Position[] = [];
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        if (isValidMove(piece, { row, col }, { row: i, col: j }, board)) {
+          const newBoard = JSON.parse(JSON.stringify(board));
+          newBoard[i][j] = piece;
+          newBoard[row][col] = "";
+          const isWhiteMove = piece === piece.toUpperCase();
+          if (!isKingInCheck(newBoard, isWhiteMove)) {
+            moves.push({ row: i, col: j });
+          }
+        }
+      }
+    }
+    return moves;
+  };
+
+  const makeComputerMove = () => {
+    const possibleMoves: { from: Position; to: Position }[] = [];
+    for (let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        const piece = board[i][j];
+        if (piece && piece === piece.toLowerCase()) { // Black pieces
+          const moves = getLegalMoves(i, j, piece);
+          moves.forEach((move) => {
+            possibleMoves.push({ from: { row: i, col: j }, to: move });
+          });
+        }
+      }
+    }
+
+    if (possibleMoves.length === 0) {
+      setGameOver(true);
+      setWinner("white");
+      return;
+    }
+
+    const randomMove = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+    const newBoard = JSON.parse(JSON.stringify(board));
+    const capturedPiece = newBoard[randomMove.to.row][randomMove.to.col];
+
+    newBoard[randomMove.to.row][randomMove.to.col] = board[randomMove.from.row][randomMove.from.col];
+    newBoard[randomMove.from.row][randomMove.from.col] = "";
+
+    if (capturedPiece) {
+      const isWhitePiece = capturedPiece === capturedPiece.toUpperCase();
+      setCapturedPieces((prev) => ({
+        ...prev,
+        [isWhitePiece ? "black" : "white"]: [
+          ...prev[isWhitePiece ? "black" : "white"],
+          capturedPiece,
+        ],
+      }));
+    }
+
+    setBoard(newBoard);
+
+    if (isKingInCheck(newBoard, true)) {
+      let isCheckmate = true; // Simplified checkmate detection
+      if (isCheckmate) {
+        setGameOver(true);
+        setWinner("black");
+      }
+    }
+
+    setCurrentPlayer("white");
+  };
+
+  useEffect(() => {
+    if (currentPlayer === "black" && !gameOver) {
+      const timer = setTimeout(() => {
+        makeComputerMove();
+      }, 500); // Delay for better UX
+      return () => clearTimeout(timer);
+    }
+  }, [currentPlayer, gameOver]);
+
   const handleDragStart = (e: React.DragEvent, row: number, col: number) => {
     const piece = board[row][col];
-    if (!piece) return;
-
+    if (!piece || currentPlayer !== "white") return;
     const isWhitePiece = piece === piece.toUpperCase();
-    if (
-      (currentPlayer === "white" && isWhitePiece) ||
-      (currentPlayer === "black" && !isWhitePiece)
-    ) {
+    if (isWhitePiece) {
       setDraggedPiece({ row, col });
       e.dataTransfer.setData("text/plain", "");
     }
@@ -150,7 +228,7 @@ const useChess = () => {
 
   const handleDrop = (e: React.DragEvent, row: number, col: number) => {
     e.preventDefault();
-    if (!draggedPiece) return;
+    if (!draggedPiece || currentPlayer !== "white") return;
 
     const piece = board[draggedPiece.row][draggedPiece.col];
     if (isValidMove(piece, draggedPiece, { row, col }, board)) {
@@ -160,8 +238,7 @@ const useChess = () => {
       newBoard[row][col] = board[draggedPiece.row][draggedPiece.col];
       newBoard[draggedPiece.row][draggedPiece.col] = "";
 
-      const isWhiteMove = currentPlayer === "white";
-      if (isKingInCheck(newBoard, isWhiteMove)) {
+      if (isKingInCheck(newBoard, true)) {
         setDraggedPiece(null);
         return;
       }
@@ -179,16 +256,16 @@ const useChess = () => {
 
       setBoard(newBoard);
 
-      if (isKingInCheck(newBoard, !isWhiteMove)) {
-        let isCheckmate = true;
+      if (isKingInCheck(newBoard, false)) {
+        let isCheckmate = true; // Simplified checkmate detection
         if (isCheckmate) {
           setGameOver(true);
-          setWinner(currentPlayer);
+          setWinner("white");
         }
       }
 
       setDraggedPiece(null);
-      setCurrentPlayer(currentPlayer === "white" ? "black" : "white");
+      setCurrentPlayer("black");
     }
   };
 
@@ -215,5 +292,3 @@ const useChess = () => {
     setGameOver,
   };
 };
-
-export default useChess;
